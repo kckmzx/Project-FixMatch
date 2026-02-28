@@ -146,9 +146,16 @@ def main():
         return model
 
     if args.local_rank == -1:
-        device = torch.device('cuda', args.gpu_id)
+        if torch.cuda.is_available():
+            device = torch.device('cuda', args.gpu_id)
+            args.n_gpu = torch.cuda.device_count()
+        elif torch.backends.mps.is_available():
+            device = torch.device('mps')
+            args.n_gpu = 0
+        else:
+            device = torch.device('cpu')
+            args.n_gpu = 0
         args.world_size = 1
-        args.n_gpu = torch.cuda.device_count()
     else:
         torch.cuda.set_device(args.local_rank)
         device = torch.device('cuda', args.local_rank)
@@ -327,22 +334,26 @@ def train(args, labeled_trainloader, unlabeled_trainloader, test_loader,
                          disable=args.local_rank not in [-1, 0])
         for batch_idx in range(args.eval_step):
             try:
-                inputs_x, targets_x = labeled_iter.next()
+                # inputs_x, targets_x = labeled_iter.next()
+                inputs_x, targets_x = next(labeled_iter)
             except:
                 if args.world_size > 1:
                     labeled_epoch += 1
                     labeled_trainloader.sampler.set_epoch(labeled_epoch)
                 labeled_iter = iter(labeled_trainloader)
-                inputs_x, targets_x = labeled_iter.next()
+                # inputs_x, targets_x = labeled_iter.next()
+                inputs_x, targets_x = next(labeled_iter)
 
             try:
-                (inputs_u_w, inputs_u_s), _ = unlabeled_iter.next()
+                # (inputs_u_w, inputs_u_s), _ = unlabeled_iter.next()
+                (inputs_u_w, inputs_u_s), _ = next(unlabeled_iter)
             except:
                 if args.world_size > 1:
                     unlabeled_epoch += 1
                     unlabeled_trainloader.sampler.set_epoch(unlabeled_epoch)
                 unlabeled_iter = iter(unlabeled_trainloader)
-                (inputs_u_w, inputs_u_s), _ = unlabeled_iter.next()
+                # (inputs_u_w, inputs_u_s), _ = unlabeled_iter.next()
+                (inputs_u_w, inputs_u_s), _ = next(unlabeled_iter)
 
             data_time.update(time.time() - end)
             batch_size = inputs_x.shape[0]
