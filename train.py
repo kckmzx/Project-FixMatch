@@ -383,6 +383,7 @@ def train(args, labeled_trainloader, unlabeled_trainloader, test_loader,
             else:
                 loss.backward()
 
+			# TODO: Comprendre pourquoi il y a une étape .update ?
             losses.update(loss.item())
             losses_x.update(Lx.item())
             losses_u.update(Lu.item())
