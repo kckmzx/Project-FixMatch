@@ -209,8 +209,14 @@ def main():
     if args.local_rank not in [-1, 0]:
         torch.distributed.barrier()
 
-    labeled_dataset, unlabeled_dataset, test_dataset = DATASET_GETTERS[args.dataset](
+    labeled_dataset_tmp, unlabeled_dataset_tmp, test_dataset_tmp = DATASET_GETTERS[args.dataset](
         args, './data')
+
+	# Use a small subset of the training data for debugging
+    subset_size = 1000
+    labeled_dataset = torch.utils.data.Subset(labeled_dataset_tmp, range(subset_size))
+    unlabeled_dataset = torch.utils.data.Subset(unlabeled_dataset_tmp, range(subset_size))
+    test_dataset = torch.utils.data.Subset(test_dataset_tmp, range(subset_size))
 
     if args.local_rank == 0:
         torch.distributed.barrier()
